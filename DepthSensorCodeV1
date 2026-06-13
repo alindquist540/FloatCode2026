@@ -30,12 +30,14 @@ if __name__ == "__main__":
     print(f"Zero-surface depth = {surface_depth:.1f} m")
 
 # Start reading depth in water
+    Fluid_p = sensor.setFluidDensity(.997)    # replace number depending on water type
     time.sleep(5)               # give time to put sensor in water
     if sensor.read():
         adj_pressure = sensor.pressure() - surface_pressure
-        depth_m = sensor.depth(adj_pressure)
+        depth_m = (adj_pressure * 100) / (Fluid_p * 9.80665)    # 9.80665 is standard gravity
 
-        print(f"Depth: {depth_m:.3f} m   Pressure: {pres:.1f} mbar")       # accounts for atm pressure
+        print(f"Pressure: {adj_pressure:.3f} mbar")    # pressure just from water
+        print(f"Depth: {depth_m:.3f} m")       # accounts for atm pressure
 
     else:
         print("I²C read failure")
