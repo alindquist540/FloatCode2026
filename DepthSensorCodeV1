@@ -4,18 +4,3 @@ def read_depth(sensor):
 	if not sensor.read():
 		return None, None
 	return sensor.depth(.998), sensor.pressure ()
-	# Change value in sensor.depth parentheses depending on water density
-
-if __name__ == "__main__":
-    num_read = 5
-    # 1) Use the 02BA class, not the generic MS5837:
-    sensor = ms5837.MS5837_02BA()
-    if not sensor.init():
-        raise RuntimeError("Could not initialize MS5837_02BA")
-
-# Calibrate zero at the surface:
-time.sleep(1)
-if not sensor.rad():
-	raise RuntimeError("Failed to read for zero-offset")
-surface_pressure = sensor.pressure()
-print(f"Zero-surface pressure = {surface_pressure:.1f} mbar")
