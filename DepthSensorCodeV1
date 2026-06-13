@@ -29,11 +29,12 @@ if __name__ == "__main__":
     print(f"Zero-surface pressure = {surface_pressure:.1f} mbar")
     print(f"Zero-surface depth = {surface_depth:.1f} m")
 
+    time.sleep(5)               # give time to put sensor in water
+
 # Start reading depth in water
 try: 
     while True:
         Fluid_p = 997        # fluid density in kg/m^3
-        time.sleep(5)               # give time to put sensor in water
 
         if sensor.read():
             adj_pressure = sensor.pressure() - surface_pressure
