@@ -20,9 +20,22 @@ if __name__ == "__main__":
  # sensor.setFluidDensity(1029.0)
 
   # 3) Calibrate zero at the surface:
-    time.sleep(1)              # let sensor stabilize
+    time.sleep(5)              # let sensor stabilize
     if not sensor.read():
         raise RuntimeError("Failed to read for zero-offset")
     surface_pressure = sensor.pressure()
+    surface_depth = 0
 
     print(f"Zero-surface pressure = {surface_pressure:.1f} mbar")
+    print(f"Zero-surface depth = {surface_depth:.1f} m")
+
+# Start reading depth in water
+    time.sleep(5)               # give time to put sensor in water
+    if not sensor.read():
+        raise RuntimeError("Failed to read fluid pressure")
+    adj_pressure = sensor.pressure() - surface_pressure
+    depth_m = sensor.depth(adj_pressure)
+
+    print(f"Depth: {depth_m:.3f} m   Pressure: {pres:.1f} mbar")       # accounts for atm pressure
+        else:
+            print("I²C read failure")
