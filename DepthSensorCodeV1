@@ -7,7 +7,7 @@ csv_data = "Float_Depth_Log.csv"
 
 with open(csv_data, mode='w', newline='') as csv_file:
     writer = csv.writer(csv_file)
-    writer.writerow(["Timestamp", "Depth (m)", "Pressure (Pa)", "Temperature (C)"])
+    writer.writerow(["Timestamp", "Depth (m)", "Pressure (Pa)"])
 
 def read_depth(sensor):
     # Trigger a new I2C read; returns True on success
