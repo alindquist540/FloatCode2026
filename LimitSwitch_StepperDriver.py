@@ -1,6 +1,14 @@
 import serial
 import time
 import sys
+import RPi.GPIO as GPIO
+
+SWITCH_1_PIN = 20  # Physical Pin 38
+SWITCH_2_PIN = 19  # Physical Pin 35
+
+GPIO.setmode(GPIO.BCM)
+GPIO.setup(SWITCH_1_PIN, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+GPIO.setup(SWITCH_2_PIN, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 
 PORT      = sys.argv[1] if len(sys.argv) > 1 else "/dev/ttyACM0"
 BAUD_RATE = 9600
@@ -32,8 +40,11 @@ def main():
                 if message:
                     print(f"Arduino: {message}")
             time.sleep(0.1)
+            
+            switch1_state = "CLOSED" if GPIO.input(SWITCH_1_PIN) == GPIO.LOW else "OPEN"
+            switch2_state = "CLOSED" if GPIO.input(SWITCH_2_PIN) == GPIO.LOW else "OPEN"
 
-    except KeyboardInterrupt:
+    if switch1_state = "CLOSED":
         print("\nStopping motor...")
         ser.write(("S\n").encode("utf-8"))
         time.sleep(0.5)
