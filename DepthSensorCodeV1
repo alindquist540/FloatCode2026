@@ -4,4 +4,4 @@ def read_depth(sensor):
 	if not sensor.read():
 		return None, None
 	return sensor.depth(.998), sensor.pressure ()
- print(f"Depth: {depth_m:.3f} m   Pressure: {pres:.1f} mbar")
+	print(f"Depth: {depth_m:.3f} m   Pressure: {pres:.1f} mbar")
