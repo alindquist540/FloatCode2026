@@ -30,7 +30,7 @@ if __name__ == "__main__":
     print(f"Zero-surface depth = {surface_depth:.1f} m")
 
 # Start reading depth in water
-    sensor.setFluidDensity(.997)    # replace number depending on water type
+while True:
     Fluid_p = 997        # fluid density in kg/m^3
     time.sleep(5)               # give time to put sensor in water
     if sensor.read():
@@ -42,3 +42,7 @@ if __name__ == "__main__":
 
     else:
         print("I²C read failure")
+
+    time.sleep(0.5)  # Wait 0.5 seconds before next reading
+except KeyboardInterrupt:
+    print("Measurement stopped.")
