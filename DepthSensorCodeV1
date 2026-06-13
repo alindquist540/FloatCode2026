@@ -56,9 +56,9 @@ try:
         else:
             print("I²C read failure")
 
- with open(csv_data, mode='a', newline='') as csv_file:
-                writer = csv.writer(csv_file)
-                writer.writerow([timestamp, round(depth_m, 3), round(pressure, 2), round(temperature, 2)])
+     with open(csv_data, mode='a', newline='') as csv_file:
+            writer = csv.writer(csv_file)
+            writer.writerow([timestamp, round(depth_m, 3), round(pressure, 2), round(temperature, 2)])
 
         time.sleep(0.5)  # Wait 0.5 seconds before next reading
 except KeyboardInterrupt:
