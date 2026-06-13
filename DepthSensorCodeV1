@@ -55,7 +55,7 @@ try:
 
             with open(csv_data, mode='a', newline='') as csv_file:
                 writer = csv.writer(csv_file)
-                writer.writerow([timestamp, round(depth_m, 3), round(pressure, 2), round(temperature, 2)])
+                writer.writerow([timestamp, round(depth_m, 3), round(adj_pressure, 2)])
 
         else:
             print("I²C read failure")
