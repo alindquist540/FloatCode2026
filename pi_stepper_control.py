@@ -22,7 +22,7 @@ import sys
 
 
 # ── Configuration ─────────────────────────────────────────────────────────────
-PORT      = sys.argv[1] if len(sys.argv) > 1 else "/dev/ttyASM0"
+PORT      = sys.argv[1] if len(sys.argv) > 1 else "/dev/ttyACM0"
 BAUD_RATE = 9600
 TIMEOUT   = 2  # seconds
 # ──────────────────────────────────────────────────────────────────────────────
