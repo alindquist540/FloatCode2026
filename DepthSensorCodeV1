@@ -15,8 +15,8 @@ if __name__ == "__main__":
     if not sensor.init():
         raise RuntimeError("Could not initialize MS5837_02BA")
 
-    # 2) (Optional) If you’re in saltwater, override the default density:
-    # sensor.setFluidDensity(1029.0)
+ # 2) (Optional) If you’re in saltwater, override the default density:
+ # sensor.setFluidDensity(1029.0)
 
   # 3) Calibrate zero at the surface:
     time.sleep(1)              # let sensor stabilize
