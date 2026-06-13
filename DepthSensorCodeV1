@@ -33,9 +33,10 @@ if __name__ == "__main__":
     time.sleep(5)               # give time to put sensor in water
     if not sensor.read():
         raise RuntimeError("Failed to read fluid pressure")
-    adj_pressure = sensor.pressure() - surface_pressure
-    depth_m = sensor.depth(adj_pressure)
+        adj_pressure = sensor.pressure() - surface_pressure
+        depth_m = sensor.depth(adj_pressure)
 
-    print(f"Depth: {depth_m:.3f} m   Pressure: {pres:.1f} mbar")       # accounts for atm pressure
-        else:
-            print("I²C read failure")
+        print(f"Depth: {depth_m:.3f} m   Pressure: {pres:.1f} mbar")       # accounts for atm pressure
+
+    else:
+        print("I²C read failure")
