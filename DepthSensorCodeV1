@@ -1,4 +1,5 @@
 import time
+import ms5837
 
 def read_depth(sensor):
     # Trigger a new I2C read; returns True on success
