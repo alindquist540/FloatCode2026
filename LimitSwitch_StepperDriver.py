@@ -32,17 +32,16 @@ def main():
     response = ser.readline().decode("utf-8").strip()
     print(f"Arduino: {response}")
 
-    try:
-        while True:
-            # Read and print any messages from Arduino
-            if ser.in_waiting:
-                message = ser.readline().decode("utf-8").strip()
-                if message:
-                    print(f"Arduino: {message}")
-            time.sleep(0.1)
+    while True:
+        # Read and print any messages from Arduino
+        if ser.in_waiting:
+            message = ser.readline().decode("utf-8").strip()
+            if message:
+                print(f"Arduino: {message}")
+        time.sleep(0.1)
             
-            switch1_state = "CLOSED" if GPIO.input(SWITCH_1_PIN) == GPIO.LOW else "OPEN"
-            switch2_state = "CLOSED" if GPIO.input(SWITCH_2_PIN) == GPIO.LOW else "OPEN"
+        switch1_state = "CLOSED" if GPIO.input(SWITCH_1_PIN) == GPIO.LOW else "OPEN"
+        switch2_state = "CLOSED" if GPIO.input(SWITCH_2_PIN) == GPIO.LOW else "OPEN"
 
     if switch1_state = "CLOSED":
         print("\nStopping motor...")
