@@ -31,7 +31,7 @@ if __name__ == "__main__":
 
 # Start reading depth in water
     sensor.setFluidDensity(.997)    # replace number depending on water type
-    Fluid_p = 0.997        # replace number depending on water type
+    Fluid_p = 997        # fluid density in kg/m^3
     time.sleep(5)               # give time to put sensor in water
     if sensor.read():
         adj_pressure = sensor.pressure() - surface_pressure
