@@ -1,47 +1,138 @@
-#!/usr/bin/env python3
-import serial
 import time
+import ms5837
+import csv
+from datetime import datetime
+import serial
+import sys
+import RPi.GPIO as GPIO
 
-def run_test_sequence(ser):
-    print("\n--- Automated Test Sequence ---")
-    sequence = [
-        ('E',    'Enable motor'),
-        ('X60',  'Set speed 60 RPM'),
-        ('F200', 'Forward 200 steps'),
-        ('F400', 'Forward 400 steps'),
-        ('B200', 'Backward 200 steps'),
-        ('R',    'Full rotation'),
-        ('X30',  'Set speed 30 RPM'),
-        ('F200', 'Forward 200 steps slow'),
-        ('S',    'Disable motor'),
-    ]
-    for cmd, desc in sequence:
-        print(f"\n[{cmd}] {desc}")
-        ser.write(cmd + '\n')
-        line = ser.readline().rstrip()
-        print(f"  Arduino: {line}")
-        time.sleep(1.5)
-    print("\n--- Test complete ---\n")
+SWITCH_1_PIN = 20  # Physical Pin 38
+SWITCH_2_PIN = 19  # Physical Pin 35
 
-if __name__ == '__main__':
-    ser = serial.Serial('/dev/ttyACM0', 9600, timeout=1)
+csv_data = "Float_Depth_Log.csv"
+
+with open(csv_data, mode='w', newline='') as csv_file:
+    writer = csv.writer(csv_file)
+    writer.writerow(["Timestamp", "Depth (m)", "Pressure (Pa)"])
+
+def read_depth(sensor):
+    # Trigger a new I2C read; returns True on success
+    if not sensor.read():
+        return None, None
+    # You can either use sensor.depth() (which applies default density)
+    # or compute depth from an adjusted pressure:
+    return sensor.depth(), sensor.pressure()
+
+if __name__ == "__main__":
+    num_read = 5
+    # 1) Use the 02BA class, not the generic MS5837:
+    sensor = ms5837.MS5837_02BA()
+    if not sensor.init():
+        raise RuntimeError("Could not initialize MS5837_02BA")
+
+ # 2) (Optional) If you’re in saltwater, override the default density:
+ # sensor.setFluidDensity(1029.0)
+
+  # 3) Calibrate zero at the surface:
+    time.sleep(5)              # let sensor stabilize
+    if not sensor.read():
+        raise RuntimeError("Failed to read for zero-offset")
+    surface_pressure = sensor.pressure()
+    surface_depth = 0
+
+    print(f"Zero-surface pressure = {surface_pressure:.1f} mbar")
+    print(f"Zero-surface depth = {surface_depth:.1f} m")
+
+    time.sleep(5)               # give time to put sensor in water
+
+GPIO.setmode(GPIO.BCM)
+GPIO.setup(SWITCH_1_PIN, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+GPIO.setup(SWITCH_2_PIN, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+
+PORT      = sys.argv[1] if len(sys.argv) > 1 else "/dev/ttyACM0"
+BAUD_RATE = 9600
+
+def send_command(ser, cmd):
+    ser.write((cmd + "\n").encode("utf-8"))
+    time.sleep(0.1)
+
+def main():
+    print(f"Connecting to Arduino on {PORT} at {BAUD_RATE} baud...")
+    try:
+        ser = serial.Serial(PORT, BAUD_RATE, timeout=2)
+    except serial.SerialException as e:
+        print(f"ERROR: Could not open port — {e}")
+        sys.exit(1)
+
+    time.sleep(2)
     ser.reset_input_buffer()
-    time.sleep(2)  # wait for Arduino to boot
+    print("Connected!")
+    print("Press Ctrl+C to stop\n")
 
-    print("Stepper Motor Test — A4988 via Arduino")
-    print("Commands: F<steps>, B<steps>, X<rpm>, E, S, R, T (auto-test), Q (quit)")
+    # Start moving forward
+    direction = "F"  # F = forward, B = backward
+    send_command(ser, "E")
+    send_command(ser, direction)
+    print("Motor started moving forward")
 
-    while True:
-        cmd = raw_input("\nCommand > ").strip().upper()
-        if not cmd:
-            continue
-        if cmd == 'Q':
-            print("Bye.")
-            break
-        if cmd == 'T':
-            run_test_sequence(ser)
-            continue
-
-        ser.write(cmd + '\n')
-        line = ser.readline().rstrip()
-        print("  Arduino: " + line)
+# Start reading depth in water
+    try: 
+        while True:
+            Fluid_p = 997        # fluid density in kg/m^3
+    
+            switch1_state = "CLOSED" if GPIO.input(SWITCH_1_PIN) == GPIO.LOW else "OPEN"
+            switch2_state = "CLOSED" if GPIO.input(SWITCH_2_PIN) == GPIO.LOW else "OPEN"
+    
+            if sensor.read():
+                timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                adj_pressure = sensor.pressure() - surface_pressure
+                depth_m = (adj_pressure * 100) / (Fluid_p * 9.80665)    # 9.80665 is standard gravity
+    
+                print(f"{timestamp}")    # time
+                print(f"Pressure: {adj_pressure:.3f} mbar")    # pressure just from water
+                print(f"Depth: {depth_m:.3f} m")       # accounts for atm pressure
+    
+                with open(csv_data, mode='a', newline='') as csv_file:
+                    writer = csv.writer(csv_file)
+                    writer.writerow([timestamp, round(depth_m, 3), round(adj_pressure, 2)])
+            
+            else:
+                print("I²C read failure")
+    
+            time.sleep(0.5)  # Wait 0.5 seconds before next reading
+                
+            if switch1_state == "CLOSED" and direction == "F":
+                print("Switch 1 triggered — reversing to backward!")
+                direction = "B"
+                send_command(ser, "S")   # stop first
+                time.sleep(0.3)
+                send_command(ser, "B")   # go backward
+                time.sleep(0.5)          # debounce delay
+    
+            if switch2_state == "CLOSED" and direction == "B":
+                print("Switch 2 triggered — reversing to forward!")
+                direction = "F"
+                send_command(ser, "S")   # stop first
+                time.sleep(0.3)
+                send_command(ser, "F")   # go forward
+                time.sleep(0.5)          # debounce delay
+    
+                # Read and print any messages from Arduino
+            if ser.in_waiting:
+                message = ser.readline().decode("utf-8").strip()
+                if message:
+                    print(f"Arduino: {message}")
+    
+                time.sleep(0.5)
+    
+    except KeyboardInterrupt:
+        print("Measurement stopped.")
+        send_command(ser, "S")
+        
+    finally:
+        ser.close()
+        GPIO.cleanup()
+        print("Cleanup done.")
+        
+if __name__ == "__main__":
+    main()
