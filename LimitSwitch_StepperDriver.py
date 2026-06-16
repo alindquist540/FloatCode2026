@@ -13,11 +13,9 @@ GPIO.setup(SWITCH_2_PIN, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 PORT      = sys.argv[1] if len(sys.argv) > 1 else "/dev/ttyACM0"
 BAUD_RATE = 9600
 
-def stop_motor(ser):
-    print("\nLimit switch triggered — stopping motor...")
-    ser.write(("S\n").encode("utf-8"))
-    time.sleep(0.5)
-    print("Motor stopped.")
+def send_command(ser, cmd):
+    ser.write((cmd + "\n").encode("utf-8"))
+    time.sleep(0.1)
 
 def main():
     print(f"Connecting to Arduino on {PORT} at {BAUD_RATE} baud...")
@@ -32,27 +30,32 @@ def main():
     print("Connected!")
     print("Press Ctrl+C to stop\n")
 
-    # Send enable command to start rotating
-    ser.write(("E\n").encode("utf-8"))
-    time.sleep(0.1)
-    response = ser.readline().decode("utf-8").strip()
-    print(f"Arduino: {response}")
+    # Start moving forward
+    direction = "F"  # F = forward, B = backward
+    send_command(ser, "E")
+    send_command(ser, direction)
+    print("Motor started moving forward")
 
     try:
         while True:
-            # Check limit switches
             switch1_state = "CLOSED" if GPIO.input(SWITCH_1_PIN) == GPIO.LOW else "OPEN"
             switch2_state = "CLOSED" if GPIO.input(SWITCH_2_PIN) == GPIO.LOW else "OPEN"
 
-            if switch1_state == "CLOSED":
-                print("Switch 1 triggered!")
-                stop_motor(ser)
-                break
+            if switch1_state == "CLOSED" and direction == "F":
+                print("Switch 1 triggered — reversing to backward!")
+                direction = "B"
+                send_command(ser, "S")   # stop first
+                time.sleep(0.3)
+                send_command(ser, "B")   # go backward
+                time.sleep(0.5)          # debounce delay
 
-            if switch2_state == "CLOSED":
-                print("Switch 2 triggered!")
-                stop_motor(ser)
-                break
+            if switch2_state == "CLOSED" and direction == "B":
+                print("Switch 2 triggered — reversing to forward!")
+                direction = "F"
+                send_command(ser, "S")   # stop first
+                time.sleep(0.3)
+                send_command(ser, "F")   # go forward
+                time.sleep(0.5)          # debounce delay
 
             # Read and print any messages from Arduino
             if ser.in_waiting:
@@ -64,7 +67,7 @@ def main():
 
     except KeyboardInterrupt:
         print("\nManually stopped.")
-        stop_motor(ser)
+        send_command(ser, "S")
 
     finally:
         ser.close()
